@@ -279,7 +279,13 @@
                     tg.initDataUnsafe.user.first_name?.charAt(0) || '👤';
             }
             
+            if (!initData) {
+                showError('Откройте приложение через Telegram');
+                return;
+            }
+            
             try {
+                console.log('Loading profile with initData...');
                 const response = await fetch('/api/user/profile', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -287,19 +293,38 @@
                 });
                 
                 const data = await response.json();
+                console.log('Profile response:', data);
                 
                 if (data.success) {
                     userData = data;
                     allGifts = data.gifts || [];
-                    renderGifts(allGifts);
-                    updateStats();
+                    
+                    if (allGifts.length === 0) {
+                        showEmptyState('У вас пока нет NFT подарков');
+                    } else {
+                        renderGifts(allGifts);
+                        updateStats();
+                    }
                 } else {
-                    showEmptyState();
+                    showError(data.error || 'Ошибка загрузки');
                 }
             } catch (error) {
                 console.error('Error loading profile:', error);
-                showEmptyState();
+                showError('Ошибка соединения с сервером');
             }
+        }
+        
+        function showError(message) {
+            document.getElementById('giftsGrid').innerHTML = `
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <p>${message}</p>
+                </div>
+            `;
         }
         
         function renderGifts(gifts) {
@@ -349,13 +374,13 @@
             return 'common';
         }
         
-        function showEmptyState() {
+        function showEmptyState(message = 'У вас пока нет NFT подарков') {
             document.getElementById('giftsGrid').innerHTML = `
                 <div class="empty-state">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7"/>
                     </svg>
-                    <p>У вас пока нет NFT подарков</p>
+                    <p>${message}</p>
                 </div>
             `;
         }
