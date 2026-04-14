@@ -4676,6 +4676,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             tg.expand(); 
             tg.enableClosingConfirmation();
         } catch(e) {}
+        
+        // Получаем данные пользователя из Telegram
+        const tgUser = tg.initDataUnsafe?.user;
+        if (tgUser) {
+            window._telegramUser = {
+                id: tgUser.id,
+                first_name: tgUser.first_name,
+                last_name: tgUser.last_name,
+                username: tgUser.username,
+                language_code: tgUser.language_code,
+                is_premium: tgUser.is_premium,
+                photo_url: tgUser.photo_url
+            };
+            console.log('Telegram User:', window._telegramUser);
+        }
     }
 
     // 1. Убираем лоадер
@@ -4684,19 +4699,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 2. Загружаем товары с API
     await loadMarketFromAPI();
 
-    // 3. Рендерим маркет
+    // 3. Загружаем категории (номера, звезды, премиум)
+    await loadCategories();
+    
+    // 4. Загружаем профиль пользователя если есть Telegram данные
+    if (window._telegramUser) {
+        await loadUserProfile(window._telegramUser.id);
+    }
+
+    // 5. Рендерим маркет
     if(typeof resetAllFilters === 'function') resetAllFilters();
     else if(typeof renderMarketGrid === 'function') renderMarketGrid();
 
-    // 4. Обновляем счетчик
+    // 6. Обновляем счетчик
     const countEl = document.querySelector('.rep-items-count');
     if(countEl) countEl.innerText = allMarketItems.length + ' items';
 
-    // 5. Остальная инициализация
+    // 7. Остальная инициализация
     if(typeof fetchUserData === 'function') fetchUserData();
     if(typeof initSettings === 'function') initSettings();
 
-    // 6. Если данных нет — показываем кнопку перезагрузки
+    // 8. Если данных нет — показываем кнопку перезагрузки
     if(allMarketItems.length === 0) {
         const grid = document.getElementById('market-grid');
         if(grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 20px;"><div style="font-size:40px;margin-bottom:12px">😔</div><div style="font-size:16px;font-weight:600;color:#fff;margin-bottom:8px">Не удалось загрузить товары</div><button onclick="location.reload()" style="background:#0098EA;border:none;border-radius:12px;padding:12px 24px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">🔄 Обновить</button></div>';
@@ -5516,6 +5539,8 @@ renderMarketGrid = function() {
             try {
                 // Пробуем разные эндпоинты
                 let endpoints = [
+                    '/api/gifts',
+                    '/api/items',
                     '/gifts',
                     '/items',
                     '/nfts',
@@ -5524,7 +5549,7 @@ renderMarketGrid = function() {
                 
                 for (let endpoint of endpoints) {
                     try {
-                        const r = await fetch(API_BASE + endpoint, {
+                        const r = await fetch(endpoint, {
                             headers: {
                                 'Authorization': API_TOKEN,
                                 'Content-Type': 'application/json'
@@ -5555,16 +5580,95 @@ renderMarketGrid = function() {
         
         // Трансформация данных MarketApp в формат приложения
         function transformMarketAppData(data) {
-            return data.map(item => ({
-                title: item.name || item.title || `Gift #${item.id}`,
-                collection: item.collection?.name || item.collection_name || 'Telegram Gift',
-                price: item.price ? `${item.price} TON` : '—',
-                lottie: item.lottie_url || item.image_url || item.preview_url || '',
-                backdrop: item.backdrop || '',
-                model: item.model || '',
-                symbol: item.symbol || '',
-                isNumber: false
-            }));
+            return data.map(item => {
+                // Проверяем различные форматы API
+                const title = item.name || item.title || item.number || `Gift #${item.id}`;
+                const collection = item.collection?.name || item.collection_name || item.collection || 'Telegram Gift';
+                const price = item.price || item.stars || item.cost || 0;
+                
+                // Lottie URL
+                let lottie = item.lottie_url || item.image_url || item.preview_url || item.animation_url || '';
+                if (!lottie && item.slug) {
+                    lottie = `https://nft.fragment.com/gift/${item.slug}.lottie.json`;
+                }
+                
+                return {
+                    title: title,
+                    collection: collection,
+                    price: typeof price === 'number' ? `${price} TON` : price,
+                    lottie: lottie,
+                    backdrop: item.backdrop || item.background || '',
+                    model: item.model || item.rarity || '',
+                    symbol: item.symbol || '',
+                    isNumber: item.isNumber || item.is_number || false,
+                    colorClass: item.colorClass || item.color || '',
+                    attributes: item.attributes || []
+                };
+            });
+        }
+        
+        // Загрузка категорий
+        async function loadCategories() {
+            // Номера
+            try {
+                const numRes = await fetch('/api/numbers');
+                if (numRes.ok) {
+                    const numbers = await numRes.json();
+                    if (Array.isArray(numbers) && numbers.length > 0) {
+                        window._numbersData = numbers;
+                        console.log('Loaded numbers:', numbers.length);
+                    }
+                }
+            } catch(e) {
+                console.log('Numbers API failed');
+            }
+            
+            // Звезды
+            try {
+                const starsRes = await fetch('/api/stars');
+                if (starsRes.ok) {
+                    const stars = await starsRes.json();
+                    if (Array.isArray(stars) && stars.length > 0) {
+                        window._starsData = stars;
+                        console.log('Loaded stars:', stars.length);
+                    }
+                }
+            } catch(e) {
+                console.log('Stars API failed');
+            }
+            
+            // Премиум
+            try {
+                const premRes = await fetch('/api/premium');
+                if (premRes.ok) {
+                    const premium = await premRes.json();
+                    if (Array.isArray(premium) && premium.length > 0) {
+                        window._premiumData = premium;
+                        console.log('Loaded premium:', premium.length);
+                    }
+                }
+            } catch(e) {
+                console.log('Premium API failed');
+            }
+        }
+        
+        // Загрузка профиля пользователя с подарками
+        async function loadUserProfile(userId) {
+            try {
+                const res = await fetch(`/api/user?user_id=${userId}`, {
+                    headers: {
+                        'Authorization': API_TOKEN
+                    }
+                });
+                if (res.ok) {
+                    const profile = await res.json();
+                    window._userProfile = profile;
+                    return profile;
+                }
+            } catch(e) {
+                console.log('User profile API failed');
+            }
+            return null;
         }
         
         // Генерация мок данных если API недоступен
@@ -5786,11 +5890,177 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* --- ПОЛНОСТЬЮ ИСПРАВЛЕННАЯ ФУНКЦИЯ ПРОФИЛЯ --- */
 function renderProfileData(data) {
+    // Используем данные из Telegram если доступны
+    const tgUser = window._telegramUser || {};
+    const profileData = window._userProfile || data;
+    
     try {
-        // 1. Обновляем баланс в шапке
-        if (document.getElementById('header-balance-display')) {
-            document.getElementById('header-balance-display').innerText = (data.balance || 0).toLocaleString();
+        // 1. Обновляем баланс в шапке (Stars или TON)
+        const balanceDisplay = document.getElementById('header-balance-display');
+        if (balanceDisplay) {
+            const balance = profileData.balance || profileData.stars || 0;
+            balanceDisplay.innerText = balance.toLocaleString();
         }
+
+        // 2. Определяем имя и юзернейм
+        const firstName = profileData.first_name || tgUser.first_name || currentUser.first_name || 'Guest';
+        const username = profileData.username || tgUser.username || currentUser.username || 'user';
+        const ownerTag = username.startsWith('@') ? username : '@' + username;
+
+        const nameEl = document.getElementById('profile-name-text');
+        if (nameEl) nameEl.innerText = firstName;
+
+        const userEl = document.getElementById('profile-username-text');
+        if (userEl) userEl.innerText = ownerTag;
+
+        // 3. Аватарка
+        const photoUrl = profileData.photo_url || tgUser.photo_url || currentUser.photo_url;
+        const realImg = document.getElementById('real-avatar');
+        const defaultText = document.getElementById('default-avatar-text');
+
+        if (photoUrl) {
+            if (realImg) {
+                realImg.src = photoUrl;
+                realImg.style.display = 'block';
+            }
+            if (defaultText) defaultText.style.display = 'none';
+        } else {
+            if (realImg) realImg.style.display = 'none';
+            if (defaultText) {
+                defaultText.style.display = 'block';
+                defaultText.innerText = firstName.charAt(0).toUpperCase();
+            }
+        }
+
+        // 4. Статистика - Stars и NFT
+        const starsBalanceEl = document.getElementById('profile-stars-val');
+        if (starsBalanceEl) {
+            // Используем баланс звезд из профиля
+            const stars = profileData.stars || profileData.balance || 0;
+            starsBalanceEl.innerText = stars.toLocaleString();
+        }
+
+        // Статус Premium
+        const isPremium = profileData.premium || tgUser.is_premium;
+        const premiumBadge = document.getElementById('premium-badge');
+        if (premiumBadge) {
+            premiumBadge.style.display = isPremium ? 'flex' : 'none';
+        }
+        
+        // 5. Загружаем NFT пользователя
+        const userNfts = profileData.gifts || profileData.nfts || [];
+        
+        // Также пробуем загрузить из API если есть Telegram данные
+        if (tgUser.id && !userNfts.length) {
+            loadAndRenderUserGifts(tgUser.id);
+            return;
+        }
+        
+        // Рендерим NFT сетку
+        renderUserNftsGrid(userNfts);
+    } catch(e) {
+        console.error('Error rendering profile:', e);
+    }
+}
+
+async function loadAndRenderUserGifts(userId) {
+    // Пытаемся загрузить через API профиля пользователя
+    const profile = await loadUserProfile(userId);
+    if (profile && profile.gifts) {
+        window._userProfile = profile;
+        renderUserNftsGrid(profile.gifts);
+    } else {
+        // Используем мок данные если API недоступен
+        renderUserNftsGrid(await getMockUserGifts());
+    }
+}
+
+async function getMockUserGifts() {
+    // Генерируем демо подарки пользователя
+    const mockGifts = [
+        { id: 1, model: 'Mousse Cakes', number: 42, collection: 'Mousse Cakes' },
+        { id: 2, model: 'Eternal Candles', number: 15, collection: 'Eternal Candles' },
+        { id: 3, model: 'Stellar Rockets', number: 88, collection: 'Stellar Rockets' }
+    ];
+    return mockGifts;
+}
+
+function renderUserNftsGrid(userNfts) {
+    const grid = document.getElementById('profile-assets-grid');
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+
+    if (!userNfts || userNfts.length === 0) {
+        grid.innerHTML = `
+            <div style="grid-column:1/-1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;">
+                <div style="position:relative;width:160px;height:130px;margin-bottom:8px;">
+                    <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);animation:profFloat 3s ease-in-out infinite;">
+                        <svg width="56" height="56" viewBox="0 0 24 24" fill="none">
+                            <rect x="2" y="8" width="20" height="13" rx="2" fill="#1a73e8" opacity="0.9"/>
+                            <rect x="1" y="6" width="22" height="4" rx="1.5" fill="#1565c0"/>
+                            <path d="M12 6V21" stroke="white" stroke-width="1.5"/>
+                            <path d="M8 6C8 6 8 2 12 2C12 2 12 6 12 6" stroke="white" stroke-width="1.5" fill="none"/>
+                            <path d="M16 6C16 6 16 2 12 2C12 2 12 6 12 6" stroke="white" stroke-width="1.5" fill="none"/>
+                        </svg>
+                    </div>
+                </div>
+                <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:8px;">У вас нет NFT</div>
+                <div style="font-size:13px;color:#555;line-height:1.7;margin-bottom:20px;max-width:240px;">Подарки, которые вы добавите,<br>появятся здесь</div>
+                <button onclick="switchTab('market')" style="display:inline-flex;align-items:center;gap:8px;background:#fff;border-radius:14px;padding:13px 28px;font-size:15px;font-weight:700;color:#000;border:none;cursor:pointer;font-family:inherit;">
+                    Купить подарки
+                </button>
+            </div>`;
+        return;
+    }
+
+    // Рендерим карточки NFT
+    userNfts.forEach((nft, index) => {
+        const card = document.createElement('div');
+        card.className = 'card anim-float';
+        
+        const tempId = `user-nft-${index}`;
+        
+        // Определяем цвет фона
+        let bgColor = '#333';
+        if (nft.model) {
+            const colors = {
+                'Mousse Cakes': '#ffb74d',
+                'Eternal Candles': '#ff7043',
+                'Stellar Rockets': '#42a5f5',
+                'Jack-in-the-Box': '#ab47bc',
+                'Ice Creams': '#26c6da'
+            };
+            bgColor = colors[nft.model] || '#333';
+        }
+        
+        const bgStyle = `background: radial-gradient(circle at center, ${bgColor} 0%, rgba(20,20,20,1) 80%);`;
+
+        card.innerHTML = `
+            <div class="card-image-wrapper" style="${bgStyle} position:relative;">
+                <div class="card-badge-top">#${nft.number || nft.id}</div>
+            </div>
+            <div class="card-info" style="justify-content: center; text-align: center; flex-direction: column; gap: 4px;">
+                <div class="card-title" style="font-size: 13px; width: 100%; margin:0;">${nft.model || nft.collection || 'Gift'}</div>
+            </div>
+        `;
+
+        grid.appendChild(card);
+
+        // Клик по карточке - открыть детали
+        card.onclick = () => {
+            if (typeof openDetail === 'function') {
+                openDetail({
+                    title: `${nft.model || nft.collection || 'Gift'} #${nft.number || nft.id}`,
+                    collection: nft.collection || nft.model || 'Telegram Gift',
+                    price: nft.price || '—',
+                    lottie: nft.lottie || '',
+                    isOwned: true
+                }, true);
+            }
+        };
+    });
+}
 
         // 2. Определяем имя и юзернейм (ownerTag)
         // ВАЖНО: Определяем переменные здесь, чтобы они были доступны везде в функции
@@ -6610,18 +6880,45 @@ function switchTab(tabName) {
     }
 }
 
-// Функция, которая наполняет страницу номеров данными
+// Функция, которая наполняет страницу номеров данными из API
     function renderNumbersGrid() {
         const grid = document.getElementById('numbers-grid');
         if (!grid) return;
         grid.innerHTML = '';
         
-        // Показываем только анонимные номера
-        const numbers = allMarketItems.filter(item => item.isNumber === true);
+        // Пробуем использовать данные из API
+        let numbers = [];
+        if (window._numbersData && window._numbersData.length > 0) {
+            numbers = window._numbersData;
+        } else {
+            // Или фильтруем из основного списка
+            numbers = allMarketItems.filter(item => item.isNumber === true);
+        }
+        
+        if (numbers.length === 0) {
+            grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#555;">Загрузка номеров...</div>';
+            // Пробуем загрузить с API
+            loadNumbersFromAPI();
+            return;
+        }
         
         numbers.forEach(item => {
             grid.appendChild(createCard(item, false));
         });
+    }
+    
+    // Загрузка номеров с API
+    async function loadNumbersFromAPI() {
+        try {
+            const res = await fetch('/api/numbers');
+            if (res.ok) {
+                const data = await res.json();
+                window._numbersData = data;
+                renderNumbersGrid();
+            }
+        } catch(e) {
+            console.log('Numbers API failed');
+        }
     }
         // --- ПОИСК ---
         document.querySelector('.search-input').addEventListener('input', function(e) {
