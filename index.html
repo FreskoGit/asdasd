@@ -4668,6 +4668,16 @@ function initSlider() {
 
 // Инициализация
 document.addEventListener('DOMContentLoaded', async () => {
+    // 0. Инициализация Telegram WebApp
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+        tg.ready();
+        try { 
+            tg.expand(); 
+            tg.enableClosingConfirmation();
+        } catch(e) {}
+    }
+
     // 1. Убираем лоадер
     setTimeout(hideLoader, 1200);
 
@@ -5498,18 +5508,125 @@ renderMarketGrid = function() {
         let allMarketItems = [];
         let _marketLoaded = false;
 
+        // API конфиг
+        const API_TOKEN = "885191-3603c436cc149001c45020ee2ed49fc8-1776200334";
+        const API_BASE = "https://api.marketapp.ws";
+        
         async function loadMarketFromAPI() {
             try {
-                const r = await fetch('/api/items');
-                if (!r.ok) throw new Error('HTTP '+r.status);
-                const data = await r.json();
-                if (Array.isArray(data) && data.length > 0) {
-                    allMarketItems = data;
-                    _marketLoaded = true;
+                // Пробуем разные эндпоинты
+                let endpoints = [
+                    '/gifts',
+                    '/items',
+                    '/nfts',
+                    '/market/gifts'
+                ];
+                
+                for (let endpoint of endpoints) {
+                    try {
+                        const r = await fetch(API_BASE + endpoint, {
+                            headers: {
+                                'Authorization': API_TOKEN,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        if (r.ok) {
+                            const data = await r.json();
+                            if (Array.isArray(data) && data.length > 0) {
+                                allMarketItems = transformMarketAppData(data);
+                                _marketLoaded = true;
+                                console.log('MarketApp API loaded:', allMarketItems.length, 'items');
+                                return;
+                            }
+                        }
+                    } catch(e) {
+                        console.log('Endpoint', endpoint, 'failed');
+                    }
                 }
+                
+                // Если API не работает - используем мок данные
+                console.warn('MarketApp API unavailable, using mock data');
+                generateMockItems();
             } catch(e) {
                 console.warn('API недоступен:', e);
+                generateMockItems();
             }
+        }
+        
+        // Трансформация данных MarketApp в формат приложения
+        function transformMarketAppData(data) {
+            return data.map(item => ({
+                title: item.name || item.title || `Gift #${item.id}`,
+                collection: item.collection?.name || item.collection_name || 'Telegram Gift',
+                price: item.price ? `${item.price} TON` : '—',
+                lottie: item.lottie_url || item.image_url || item.preview_url || '',
+                backdrop: item.backdrop || '',
+                model: item.model || '',
+                symbol: item.symbol || '',
+                isNumber: false
+            }));
+        }
+        
+        // Генерация мок данных если API недоступен
+        function generateMockItems() {
+            const collections = [
+                { name: "Spy Agarics", symbol: "Mushroom" },
+                { name: "Mousse Cakes", symbol: "Cake" },
+                { name: "Eternal Candles", symbol: "Candle" },
+                { name: "Stellar Rockets", symbol: "Rocket" },
+                { name: "Jack-in-the-Box", symbol: "Box" },
+                { name: "Ice Creams", symbol: "IceCream" },
+                { name: "Fresh Socks", symbol: "Socks" },
+                { name: "Durov's Caps", symbol: "Cap" },
+                { name: "Magic Potions", symbol: "Potion" },
+                { name: "Trapped Hearts", symbol: "Heart" }
+            ];
+            
+            const models = ["Legendary", "Champion", "Neon Party", "Dalmatin", "Falcon", "Pharaoh"];
+            const backdrops = ["Gold", "Cyberpunk", "Onyx Black", "French Blue", "Chocolate", "Space"];
+            const symbols = ["Star", "Skull", "Flame", "Magic Wand", "Diamond", "Crown"];
+            
+            allMarketItems = [];
+            
+            // Генерируем 50 мок-items
+            for (let i = 1; i <= 50; i++) {
+                const coll = collections[Math.floor(Math.random() * collections.length)];
+                const model = models[Math.floor(Math.random() * models.length)];
+                const backdrop = backdrops[Math.floor(Math.random() * backdrops.length)];
+                const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+                const price = Math.floor(Math.random() * 200) + 5;
+                
+                // Генерируем slug для Lottie URL (формат Fragment)
+                const slug = coll.name.toLowerCase().replace(/\s+/g, '-').replace(/'/g, '');
+                
+                allMarketItems.push({
+                    title: `${coll.name} #${i}`,
+                    collection: coll.name,
+                    model: model,
+                    backdrop: backdrop,
+                    symbol: symbol,
+                    price: `${price} TON`,
+                    lottie: `https://nft.fragment.com/gift/${slug}-${i}.lottie.json`,
+                    isNumber: false
+                });
+            }
+            
+            // Добавляем анонимные номера
+            const prefixes = ['999', '888', '777', '+7900', '+7901'];
+            for (let i = 1; i <= 10; i++) {
+                const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+                const num = Math.floor(Math.random() * 9000000) + 1000000;
+                allMarketItems.push({
+                    title: `${prefix}${num}`,
+                    collection: 'Anonymous Number',
+                    price: `${Math.floor(Math.random() * 50) + 10} TON`,
+                    isNumber: true,
+                    colorClass: ['num-bg-blue', 'num-bg-gold', 'num-bg-purple', 'num-bg-green'][Math.floor(Math.random() * 4)]
+                });
+            }
+            
+            _marketLoaded = true;
+            console.log('Generated mock items:', allMarketItems.length);
         }
         
         // НЕ запускаем сразу — ждём DOMContentLoaded
@@ -5604,8 +5721,11 @@ document.addEventListener('DOMContentLoaded', () => {
         async function fetchUserData() {
             try {
                 // 1. ЕСЛИ ОТКРЫТО В БРАУЗЕРЕ (НЕТ ДАННЫХ TELEGRAM)
-                // Сразу рисуем тестовый профиль, как в вашей работающей копии
-                if(!tg.initDataUnsafe?.user) {
+                // Сначала проверяем есть ли данные от Telegram
+                const tgUser = tg.initDataUnsafe?.user;
+                
+                // Если открыто в браузере без Telegram - показываем демо
+                if (!tgUser && !window.location.href.includes('tgWebAppData')) {
                    console.log("Режим браузера: используем демо-данные");
                    renderProfileData({
                        first_name: "Guest User", 
@@ -5616,36 +5736,45 @@ document.addEventListener('DOMContentLoaded', () => {
                    return; 
                 }
 
-                // 2. ПЫТАЕМСЯ ПОЛУЧИТЬ ДАННЫЕ С СЕРВЕРА
-                const response = await fetch(`/api/user/${currentUser.id}`);
+                // 2. Если есть Telegram данные - используем их для профиля
+                // Пытаемся получить данные пользователя через API
+                const userId = tgUser?.id || currentUser.id;
                 
-                // Если сервер недоступен или вернул 404/500
-                if (!response.ok) {
-                    throw new Error("Ошибка связи с ботом");
-                }
-
-                const data = await response.json();
-                
-                // 3. ЕСЛИ ЮЗЕРА НЕТ В БАЗЕ (СЕРВЕР ВЕРНУЛ ERROR)
-                // Не делаем return, а рисуем пустой профиль с данными из Телеграма
-                if(data.status === 'error') {
-                    console.warn("Юзер не найден в БД, рисуем заглушку:", data.message);
-                    renderProfileData({
-                        first_name: currentUser.first_name || 'User',
-                        username: currentUser.username || 'username',
-                        balance: 0,
-                        nfts: []
+                // Пробуем MarketApp API для получения профиля
+                try {
+                    const profileRes = await fetch(API_BASE + '/user', {
+                        headers: {
+                            'Authorization': API_TOKEN,
+                            'Content-Type': 'application/json'
+                        }
                     });
-                    return;
+                    
+                    if (profileRes.ok) {
+                        const profileData = await profileRes.json();
+                        renderProfileData({
+                            first_name: profileData.first_name || tgUser?.first_name || 'User',
+                            username: profileData.username || tgUser?.username || 'username',
+                            balance: profileData.balance || 0,
+                            nfts: profileData.nfts || []
+                        });
+                        return;
+                    }
+                } catch(e) {
+                    console.log('MarketApp profile API failed');
                 }
-
-                // 4. ЕСЛИ ВСЁ ОТЛИЧНО — РИСУЕМ РЕАЛЬНЫЕ ДАННЫЕ
-                renderProfileData(data);
+                
+                // 3. Если API недоступен - используем данные из Telegram
+                console.log("Используем данные Telegram:", tgUser);
+                renderProfileData({
+                    first_name: tgUser?.first_name || currentUser.first_name || 'User',
+                    username: tgUser?.username || currentUser.username || 'username',
+                    photo_url: tgUser?.photo_url,
+                    balance: 0,
+                    nfts: []
+                });
 
             } catch (e) {
                 console.error("Ошибка загрузки профиля:", e);
-                // 5. ЕСЛИ СЛУЧИЛАСЬ ЛЮБАЯ ОШИБКА (например, интернет пропал)
-                // Рисуем хоть что-то, чтобы экран не был пустым
                 renderProfileData({
                     first_name: currentUser.first_name || 'User',
                     username: currentUser.username || 'username',
