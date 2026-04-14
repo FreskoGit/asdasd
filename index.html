@@ -6,218 +6,44 @@
     <title>Профиль | NFT Подарки</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
-            min-height: 100vh;
-            color: #fff;
-        }
-        
-        .container {
-            max-width: 480px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .header {
-            text-align: center;
-            padding: 20px 0;
-        }
-        
-        .header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-        
-        .header p {
-            color: #888;
-            font-size: 14px;
-        }
-        
-        .user-info {
-            background: linear-gradient(135deg, #2d2d44 0%, #1f1f35 100%);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .user-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-        
-        .user-details h2 {
-            font-size: 18px;
-            margin-bottom: 5px;
-        }
-        
-        .user-details span {
-            color: #888;
-            font-size: 14px;
-        }
-        
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        
-        .stat-card {
-            background: #252540;
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-        }
-        
-        .stat-card .value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #a855f7;
-        }
-        
-        .stat-card .label {
-            color: #888;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-        
-        .gifts-section {
-            margin-top: 20px;
-        }
-        
-        .section-title {
-            font-size: 18px;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #333;
-        }
-        
-        .gifts-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-        
-        .gift-card {
-            background: #252540;
-            border-radius: 12px;
-            overflow: hidden;
-            transition: transform 0.2s;
-        }
-        
-        .gift-card:hover {
-            transform: scale(1.02);
-        }
-        
-        .gift-image {
-            width: 100%;
-            aspect-ratio: 1;
-            background: #1a1a2e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .gift-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .gift-info {
-            padding: 10px;
-        }
-        
-        .gift-name {
-            font-size: 12px;
-            font-weight: bold;
-            margin-bottom: 5px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .gift-price {
-            font-size: 11px;
-            color: #4ade80;
-        }
-        
-        .gift-rarity {
-            display: inline-block;
-            font-size: 10px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-top: 5px;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; }
+        .container { max-width: 480px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; padding: 20px 0; }
+        .header h1 { font-size: 24px; margin-bottom: 5px; }
+        .header p { color: #888; font-size: 14px; }
+        .user-info { background: linear-gradient(135deg, #2d2d44 0%, #1f1f35 100%); border-radius: 16px; padding: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
+        .user-avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 100%); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .user-details h2 { font-size: 18px; margin-bottom: 5px; }
+        .user-details span { color: #888; font-size: 14px; }
+        .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: #252540; border-radius: 12px; padding: 16px; text-align: center; }
+        .stat-card .value { font-size: 24px; font-weight: bold; color: #a855f7; }
+        .stat-card .label { color: #888; font-size: 12px; margin-top: 5px; }
+        .gifts-section { margin-top: 20px; }
+        .section-title { font-size: 18px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #333; }
+        .gifts-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .gift-card { background: #252540; border-radius: 12px; overflow: hidden; transition: transform 0.2s; cursor: pointer; }
+        .gift-card:hover { transform: scale(1.02); }
+        .gift-image { width: 100%; aspect-ratio: 1; background: #1a1a2e; display: flex; align-items: center; justify-content: center; font-size: 32px; }
+        .gift-image img { width: 100%; height: 100%; object-fit: cover; }
+        .gift-info { padding: 10px; }
+        .gift-name { font-size: 12px; font-weight: bold; margin-bottom: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .gift-price { font-size: 11px; color: #4ade80; }
+        .gift-rarity { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 10px; margin-top: 5px; }
         .rarity-common { background: #6b7280; }
         .rarity-rare { background: #3b82f6; }
         .rarity-epic { background: #8b5cf6; }
         .rarity-legendary { background: #f59e0b; }
         .rarity-limited { background: #ef4444; }
-        
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #888;
-        }
-        
-        .error {
-            text-align: center;
-            padding: 40px;
-            color: #ef4444;
-        }
-        
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .tab {
-            flex: 1;
-            padding: 12px;
-            background: #252540;
-            border: none;
-            border-radius: 10px;
-            color: #888;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .tab.active {
-            background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 100%);
-            color: #fff;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #888;
-        }
-        
-        .empty-state svg {
-            width: 60px;
-            height: 60px;
-            margin-bottom: 15px;
-            opacity: 0.5;
-        }
+        .loading { text-align: center; padding: 40px; color: #888; }
+        .error { text-align: center; padding: 40px; color: #ef4444; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 12px; background: #252540; border: none; border-radius: 10px; color: #888; cursor: pointer; transition: all 0.2s; }
+        .tab.active { background: linear-gradient(135deg, #6c5ce7 0%, #a855f7 100%); color: #fff; }
+        .empty-state { text-align: center; padding: 40px; color: #888; }
+        .empty-state svg { width: 60px; height: 60px; margin-bottom: 15px; opacity: 0.5; }
+        .refresh-btn { background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -246,6 +72,8 @@
             </div>
         </div>
         
+        <button class="refresh-btn" onclick="loadProfile()">🔄 Обновить</button>
+        
         <div class="tabs">
             <button class="tab active" data-tab="all">Все</button>
             <button class="tab" data-tab="collectible">Коллекционные</button>
@@ -268,36 +96,32 @@
         
         async function loadProfile() {
             const userId = tg.initDataUnsafe?.user?.id || 1;
-            const initData = tg.initData || '';
             
             document.getElementById('userId').textContent = `ID: ${userId}`;
             
             if (tg.initDataUnsafe?.user) {
-                document.getElementById('userName').textContent = 
-                    tg.initDataUnsafe.user.first_name || 'Пользователь';
-                document.getElementById('userAvatar').textContent = 
-                    tg.initDataUnsafe.user.first_name?.charAt(0) || '👤';
+                document.getElementById('userName').textContent = tg.initDataUnsafe.user.first_name || 'Пользователь';
+                document.getElementById('userAvatar').textContent = tg.initDataUnsafe.user.first_name?.charAt(0) || '👤';
             }
             
-            if (!initData) {
-                showError('Откройте приложение через Telegram');
-                return;
-            }
+            document.getElementById('giftsGrid').innerHTML = '<div class="loading">Загрузка подарков...</div>';
             
             try {
-                console.log('Loading profile with initData...');
+                console.log('Fetching gifts for user:', userId);
                 const response = await fetch('/api/user/profile', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId, initData })
+                    body: JSON.stringify({ userId: userId })
                 });
                 
                 const data = await response.json();
-                console.log('Profile response:', data);
+                console.log('API Response:', data);
                 
                 if (data.success) {
                     userData = data;
                     allGifts = data.gifts || [];
+                    
+                    console.log('Gifts loaded:', allGifts.length);
                     
                     if (allGifts.length === 0) {
                         showEmptyState('У вас пока нет NFT подарков');
@@ -314,6 +138,67 @@
             }
         }
         
+        function renderGifts(gifts) {
+            const grid = document.getElementById('giftsGrid');
+            
+            if (!gifts || gifts.length === 0) {
+                showEmptyState('Нет подарков');
+                return;
+            }
+            
+            grid.innerHTML = gifts.map(gift => {
+                const details = userData?.giftDetails?.[gift.giftId] || gift;
+                const rarity = getRarity(details);
+                const imageUrl = details.imageUrl || details.image || details.sticker;
+                const name = details.name || details.title || `Gift #${gift.giftId}`;
+                const price = gift.price || details.price || 0;
+                
+                return `
+                    <div class="gift-card" onclick="showGiftDetails(${gift.giftId})">
+                        <div class="gift-image">
+                            ${imageUrl ? `<img src="${imageUrl}" alt="${name}" onerror="this.style.display='none';this.parentElement.textContent='🎁'">` : '🎁'}
+                        </div>
+                        <div class="gift-info">
+                            <div class="gift-name">${name}</div>
+                            <div class="gift-price">${price} TON</div>
+                            <span class="gift-rarity rarity-${rarity}">${rarity}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function updateStats() {
+            document.getElementById('totalGifts').textContent = allGifts.length;
+            
+            const totalValue = allGifts.reduce((sum, gift) => {
+                const price = parseFloat(gift.price || userData?.giftDetails?.[gift.giftId]?.price || 0);
+                return sum + price;
+            }, 0);
+            
+            document.getElementById('totalValue').textContent = totalValue.toFixed(2);
+        }
+        
+        function getRarity(details) {
+            if (!details) return 'common';
+            if (details.isLimited || details.limited) return 'limited';
+            if (details.isLegendary || details.legendary) return 'legendary';
+            if (details.isEpic || details.epic) return 'epic';
+            if (details.isRare || details.rare) return 'rare';
+            return 'common';
+        }
+        
+        function showEmptyState(message) {
+            document.getElementById('giftsGrid').innerHTML = `
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7"/>
+                    </svg>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+        
         function showError(message) {
             document.getElementById('giftsGrid').innerHTML = `
                 <div class="empty-state">
@@ -327,85 +212,28 @@
             `;
         }
         
-        function renderGifts(gifts) {
-            const grid = document.getElementById('giftsGrid');
-            
-            if (!gifts || gifts.length === 0) {
-                showEmptyState();
-                return;
-            }
-            
-            grid.innerHTML = gifts.map(gift => {
-                const details = userData?.giftDetails?.[gift.giftId] || {};
-                const rarity = getRarity(details);
-                
-                return `
-                    <div class="gift-card" onclick="showGiftDetails(${gift.giftId})">
-                        <div class="gift-image">
-                            ${details.imageUrl ? `<img src="${details.imageUrl}" alt="${details.name}">` : '🎁'}
-                        </div>
-                        <div class="gift-info">
-                            <div class="gift-name">${details.name || 'Unknown'}</div>
-                            <div class="gift-price">${gift.price || details.price || 0} TON</div>
-                            <span class="gift-rarity rarity-${rarity}">${rarity}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        function updateStats() {
-            document.getElementById('totalGifts').textContent = allGifts.length;
-            
-            const totalValue = allGifts.reduce((sum, gift) => {
-                const price = gift.price || userData?.giftDetails?.[gift.giftId]?.price || 0;
-                return sum + parseFloat(price);
-            }, 0);
-            
-            document.getElementById('totalValue').textContent = totalValue.toFixed(2);
-        }
-        
-        function getRarity(details) {
-            if (!details) return 'common';
-            if (details.isLimited) return 'limited';
-            if (details.isLegendary) return 'legendary';
-            if (details.isEpic) return 'epic';
-            if (details.isRare) return 'rare';
-            return 'common';
-        }
-        
-        function showEmptyState(message = 'У вас пока нет NFT подарков') {
-            document.getElementById('giftsGrid').innerHTML = `
-                <div class="empty-state">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 12v10H4V12M2 7h20v5H2zM12 22V7"/>
-                    </svg>
-                    <p>${message}</p>
-                </div>
-            `;
-        }
-        
         function showGiftDetails(giftId) {
             const gift = allGifts.find(g => g.giftId === giftId);
-            const details = userData?.giftDetails?.[giftId] || {};
+            const details = userData?.giftDetails?.[giftId] || gift || {};
             
-            tg.showAlert(`
-                🎁 ${details.name || 'Unknown Gift'}
-                
-                💰 Цена: ${gift?.price || details?.price || 0} TON
-                📦 Коллекция: ${details.collection || 'Unknown'}
-                🔖 rarity: ${getRarity(details)}
-                ${details.description ? `\n📝 ${details.description}` : ''}
-            `);
+            const info = `
+🎁 ${details.name || 'Unknown Gift'}
+
+💰 Цена: ${gift?.price || details?.price || 0} TON
+📦 Коллекция: ${details.collection || details.model || 'Unknown'}
+🔖 Редкость: ${getRarity(details)}
+${details.backdrop ? `🎬 Фон: ${details.backdrop}` : ''}
+${details.symbol ? `⭐ Символ: ${details.symbol}` : ''}
+            `.trim();
+            
+            tg.showAlert(info);
         }
         
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
-                
-                const tabType = tab.dataset.tab;
-                filterGifts(tabType);
+                filterGifts(tab.dataset.tab);
             });
         });
         
@@ -413,17 +241,15 @@
             let filtered = allGifts;
             
             if (type === 'collectible') {
-                filtered = allGifts.filter(g => g.isCollectible);
+                filtered = allGifts.filter(g => g.isCollectible || g.collectible);
             } else if (type === 'profile') {
-                filtered = allGifts.filter(g => g.onProfile);
+                filtered = allGifts.filter(g => g.onProfile || g.displayOnProfile);
             }
             
             renderGifts(filtered);
         }
         
-        tg.onEvent('viewportChanged', () => {
-            tg.expand();
-        });
+        tg.onEvent('viewportChanged', () => tg.expand());
         
         loadProfile();
     </script>
